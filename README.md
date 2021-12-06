@@ -11,7 +11,7 @@ Will be changed into this file:
 
 It can be used with a git pre-commit hook https://stackoverflow.com/questions/17101473/change-version-file-automatically-on-commit-with-git
 
-Exemple: of a pre-commit hook (the file must be named pre-commit and put in the .git folder, and copy UpdateAssemblyInfo.exe somewhere in the PATH):
+Exemple: of a pre-commit hook (the file must be named "pre-commit" and put in the .git/hooks folder, and copy UpdateAssemblyInfo.exe somewhere in the PATH):
 
 	#!/bin/sh
 	#
