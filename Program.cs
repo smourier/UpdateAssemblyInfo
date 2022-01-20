@@ -31,7 +31,7 @@ namespace UpdateAssemblyInfo
 
         static void RealMain()
         {
-            Console.WriteLine("UpdateAssemblyInfo - Copyright (C) 2020-" + DateTime.Now.Year + " Simon Mourier. All rights reserved.");
+            Console.WriteLine("UpdateAssemblyInfo - Copyright (C) 2021-" + DateTime.Now.Year + " Simon Mourier. All rights reserved.");
             Console.WriteLine();
 
             var path = CommandLine.GetNullifiedArgument(0);
@@ -43,6 +43,7 @@ namespace UpdateAssemblyInfo
 
             var changes = new List<Change>();
             changes.Add(new Change { AttributeName = "AssemblyInformationalVersion" });
+            changes.Add(new Change { AttributeName = "AssemblyFileVersion" });
 
             var encoding = Extensions.DetectFileEncoding(path, Encoding.UTF8);
             var lines = File.ReadAllLines(path, encoding);
@@ -89,13 +90,13 @@ namespace UpdateAssemblyInfo
             Console.WriteLine(Assembly.GetEntryAssembly().GetName().Name.ToUpperInvariant() + " <file path>");
             Console.WriteLine();
             Console.WriteLine("Description:");
-            Console.WriteLine("    This tool is used to update the AssemblyInformationalVersion of a file.");
+            Console.WriteLine("    This tool is used to update assembly versions of a file.");
             Console.WriteLine();
             Console.WriteLine("Example:");
             Console.WriteLine();
             Console.WriteLine("    " + Assembly.GetEntryAssembly().GetName().Name.ToUpperInvariant() + " AssemblyInfo.cs");
             Console.WriteLine();
-            Console.WriteLine("    Updates the AssemblyInformationalVersion attribute in the AssemblyInfo.cs file.");
+            Console.WriteLine("    Updates the AssemblyInformationalVersion and AssemblyFileVersion attributes in the AssemblyInfo.cs file.");
             Console.WriteLine();
         }
 
@@ -104,10 +105,7 @@ namespace UpdateAssemblyInfo
             public string AttributeName { get; set; }
             public string NewLine { get; private set; }
 
-            public virtual string CreateAttribute()
-            {
-                return "[assembly: " + AttributeName + "(\"1.0.0.0\")]";
-            }
+            public virtual string CreateAttribute() => "[assembly: " + AttributeName + "(\"1.0.0.0\")]";
 
             public virtual string UpdateAttribute(string line)
             {
