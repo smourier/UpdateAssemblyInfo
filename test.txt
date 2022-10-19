@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 #endif
 [assembly: AssemblyCompany("Simon Mourier")]
 [assembly: AssemblyProduct("UpdateAssemblyInfo")]
-[assembly: AssemblyCopyright("Copyright (C) 2021 Simon Mourier. All rights reserved.")]
+[assembly: AssemblyCopyright("Copyright (C) 2021-2022 Simon Mourier. All rights reserved.")]
 [assembly: AssemblyCulture("")]
 [assembly: ComVisible(false)]
 [assembly: Guid("7de94308-df86-497c-b925-d1f1f0fc9e39")]

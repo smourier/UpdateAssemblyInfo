@@ -41,9 +41,31 @@ namespace UpdateAssemblyInfo
                 return;
             }
 
+            var commitDate = CommandLine.GetArgument("commitDate", true);
+            var fileVersion = CommandLine.GetArgument("fileVersion", true);
+            var informationalVersion = CommandLine.GetArgument("informationalVersion", true);
+
             var changes = new List<Change>();
-            changes.Add(new Change { AttributeName = "AssemblyInformationalVersion" });
-            changes.Add(new Change { AttributeName = "AssemblyFileVersion" });
+            if (fileVersion)
+            {
+                changes.Add(new VersionChange { AttributeName = "AssemblyFileVersion" });
+            }
+
+            if (informationalVersion)
+            {
+                changes.Add(new VersionChange { AttributeName = "AssemblyInformationalVersion" });
+            }
+
+            if (commitDate)
+            {
+                changes.Add(new CommitDateChange());
+            }
+
+            if (changes.Count == 0)
+            {
+                Help();
+                return;
+            }
 
             var encoding = Extensions.DetectFileEncoding(path, Encoding.UTF8);
             var lines = File.ReadAllLines(path, encoding);
@@ -87,27 +109,71 @@ namespace UpdateAssemblyInfo
 
         static void Help()
         {
-            Console.WriteLine(Assembly.GetEntryAssembly().GetName().Name.ToUpperInvariant() + " <file path>");
+            Console.WriteLine(Assembly.GetEntryAssembly().GetName().Name.ToUpperInvariant() + " <file path> [options]");
             Console.WriteLine();
             Console.WriteLine("Description:");
             Console.WriteLine("    This tool is used to update assembly versions of a file.");
+            Console.WriteLine();
+            Console.WriteLine("Options:");
+            Console.WriteLine();
+            Console.WriteLine("    /fileVersion:<bool>             Update or create AssemblyFileVersion assembly attribute. Default value is true.");
+            Console.WriteLine("    /informationalVersion:<bool>    Update or create AssemblyInformationalVersion assembly attribute. Default value is true.");
+            Console.WriteLine("    /commitDate:<bool>              Update or create AssemblyMetadata(\"Commit Date\") assembly attribute. Default value is true.");
             Console.WriteLine();
             Console.WriteLine("Example:");
             Console.WriteLine();
             Console.WriteLine("    " + Assembly.GetEntryAssembly().GetName().Name.ToUpperInvariant() + " AssemblyInfo.cs");
             Console.WriteLine();
-            Console.WriteLine("    Updates the AssemblyInformationalVersion and AssemblyFileVersion attributes in the AssemblyInfo.cs file.");
+            Console.WriteLine("    Updates AssemblyInformationalVersion, AssemblyFileVersion and AssemblyMetadata(\"Commit Date\") attributes in the AssemblyInfo.cs file.");
             Console.WriteLine();
         }
 
-        private class Change
+        private class CommitDateChange : Change
         {
-            public string AttributeName { get; set; }
-            public string NewLine { get; private set; }
+            public override string AttributeName => "AssemblyMetadata";
 
-            public virtual string CreateAttribute() => "[assembly: " + AttributeName + "(\"1.0.0.0\")]";
+            private const string _key = "Commit Date";
+            public override string CreateAttribute() => "[assembly: " + AttributeName + "(\"" + _key + "\", \"" + DateTime.UtcNow.ToString("R") + "\")]";
 
-            public virtual string UpdateAttribute(string line)
+            public override string UpdateAttribute(string line)
+            {
+                UpdateAttribute(line, AttributeName);
+                if (NewLine != null)
+                    return NewLine;
+
+                UpdateAttribute(line, AttributeName + "Attribute");
+                return NewLine;
+            }
+
+            private void UpdateAttribute(string line, string name)
+            {
+                var trim = line.TrimStart();
+                if (!trim.StartsWith("[assembly: "))
+                    return;
+
+                var startToken = name + "(\"";
+                var start = line.IndexOf(startToken);
+                if (start < 0)
+                    return;
+
+                var endToken = "\")]";
+                var end = line.IndexOf(endToken, start + startToken.Length);
+                if (end < 0)
+                    return;
+
+                var content = line.Substring(start + startToken.Length, end - start - startToken.Length);
+                if (!content.StartsWith(_key))
+                    return;
+
+                var newName = DateTime.UtcNow.ToString("R");
+                NewLine = line.Substring(0, start) + name + "(\"" + _key + "\", \"" + newName + endToken + line.Substring(end + endToken.Length);
+            }
+        }
+
+        private class VersionChange : Change
+        {
+            public override string CreateAttribute() => "[assembly: " + AttributeName + "(\"1.0.0.0\")]";
+            public override string UpdateAttribute(string line)
             {
                 UpdateAttribute(line, AttributeName);
                 if (NewLine != null)
@@ -150,7 +216,15 @@ namespace UpdateAssemblyInfo
 
                 NewLine = newLine;
             }
+        }
 
+        private abstract class Change
+        {
+            public virtual string AttributeName { get; set; }
+            public string NewLine { get; protected set; }
+
+            public abstract string CreateAttribute();
+            public abstract string UpdateAttribute(string line);
             public override string ToString() => AttributeName + " => '" + NewLine + "'";
         }
     }
