@@ -70,7 +70,7 @@ namespace UpdateAssemblyInfo
             var encoding = Extensions.DetectFileEncoding(path, Encoding.UTF8);
             var lines = File.ReadAllLines(path, encoding);
             var changed = false;
-            var newLines = new List<string>();
+            var newLines = new List<(string, bool)>();
             foreach (var line in lines)
             {
                 var added = false;
@@ -79,7 +79,7 @@ namespace UpdateAssemblyInfo
                     var newLine = change.UpdateAttribute(line);
                     if (newLine != null)
                     {
-                        newLines.Add(newLine);
+                        newLines.Add((newLine, true));
                         changed = true;
                         added = true;
                     }
@@ -87,7 +87,7 @@ namespace UpdateAssemblyInfo
 
                 if (!added)
                 {
-                    newLines.Add(line);
+                    newLines.Add((line, false));
                 }
             }
 
@@ -96,14 +96,21 @@ namespace UpdateAssemblyInfo
                 var newLine = change.CreateAttribute();
                 if (newLine != null)
                 {
-                    newLines.Add(newLine);
+                    newLines.Add((newLine, true));
                     changed = true;
                 }
             }
 
             if (changed)
             {
-                File.WriteAllLines(path, newLines.ToArray(), encoding);
+                var changedLines = newLines.Where(n => n.Item2).ToArray();
+                Console.WriteLine(changedLines.Length + " line(s) were added or changed:");
+                Console.WriteLine();
+                foreach (var newLine in changedLines)
+                {
+                    Console.WriteLine(newLine.Item1);
+                }
+                File.WriteAllLines(path, newLines.Select(n => n.Item1).ToArray(), encoding);
             }
         }
 
